@@ -107,6 +107,22 @@ async function startScan() {
         match ? match[0].replace(/\D/g, '') : '';
 
       status.textContent = 'NFC Read Successfully!';
+      
+// Prepare data for Stock Take
+const stockTakeURL = 'https://script.google.com/a/macros/djz.edu.my/s/AKfycbxmp34DUTeRuJxTZhlMvZw6nRB6qGqWP16q-gysbHiYQ9KzcKDbsXgSQ_ra5Z_m-YkMgw/exec';
+
+const params = new URLSearchParams({
+  isbn: document.getElementById('isbn').value,
+  nfcText: fullText
+});
+
+status.textContent = 'NFC successful! Returning to Stock Take...';
+
+setTimeout(function() {
+  window.location.href =
+    stockTakeURL + '?' + params.toString();
+}, 1000);
+
     };
 
   } catch (error) {
