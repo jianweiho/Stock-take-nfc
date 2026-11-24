@@ -1,0 +1,119 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stock Take NFC</title>
+<style>
+body {
+  font-family: Arial;
+  background: #f1f5f9;
+  padding: 20px;
+}
+.container {
+  max-width: 500px;
+  margin: auto;
+  background: white;
+  padding: 20px;
+  border-radius: 15px;
+}
+button {
+  width: 100%;
+  padding: 18px;
+  background: #0f766e;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 18px;
+}
+input, textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  margin: 10px 0;
+  font-size: 16px;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<h2>📚 STOCK TAKE NFC</h2>
+
+<button onclick="startScan()">SCAN NFC TAG</button>
+
+<p id="status">Ready to scan</p>
+
+<label>ISBN</label>
+<input id="isbn" readonly>
+
+<label>NFC Full Text</label>
+<textarea id="nfcText" rows="5" readonly></textarea>
+
+</div>
+
+<script>
+async function startScan() {
+  const status = document.getElementById('status');
+
+  if (!('NDEFReader' in window)) {
+    status.textContent = 'NFC not supported';
+    return;
+  }
+
+  try {
+    const reader = new NDEFReader();
+
+    status.textContent = 'Waiting for NFC Tag...';
+
+    await reader.scan();
+
+    status.textContent = 'Please tap NFC Tag on phone';
+
+    reader.onreading = function(event) {
+      let texts = [];
+
+      for (const record of event.message.records) {
+        if (record.recordType === 'text') {
+          const data = record.data;
+          const flag = data.getUint8(0);
+          const langLength = flag & 0x3f;
+          const start = 1 + langLength;
+
+          const bytes = new Uint8Array(
+            data.buffer,
+            data.byteOffset + start,
+            data.byteLength - start
+          );
+
+          const text = new TextDecoder(
+            flag & 0x80 ? 'utf-16be' : 'utf-8'
+          ).decode(bytes);
+
+          texts.push(text);
+        }
+      }
+
+      const fullText = texts.join('\n');
+
+      document.getElementById('nfcText').value = fullText;
+
+      const match = fullText.match(
+        /(?:978|979)(?:[-\s]?\d){10}/
+      );
+
+      document.getElementById('isbn').value =
+        match ? match[0].replace(/\D/g, '') : '';
+
+      status.textContent = 'NFC Read Successfully!';
+    };
+
+  } catch (error) {
+    status.textContent = 'Error: ' + error.message;
+  }
+}
+</script>
+
+</body>
+</html>
